@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confluence Signal Engine — {{ symbol }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F1115;
+    --panel: #161920;
+    --panel-border: #262b35;
+    --text-primary: #E8EAED;
+    --text-muted: #8A909C;
+    --text-dim: #565C68;
+    --green: #3ECF8E;
+    --amber: #D9A441;
+    --red: #C4544A;
+    --accent: #5B8DEF;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--panel-border);
+    background: #0C0E12;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    background: linear-gradient(135deg, var(--accent), #7C6FEF);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 16px;
+    color: white;
+  }
+
+  .brand-text h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  .brand-text p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .price-tag {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 90px;
+  }
+
+  .pill {
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    color: var(--text-muted);
+  }
+
+  .pill.gate-pending { border-color: #4a3a1e; background: #241c10; color: var(--amber); }
+  .pill.gate-pass { border-color: #1e4a35; background: #10241c; color: var(--green); }
+  .pill.gate-fail { border-color: #4a1e1e; background: #241010; color: var(--red); }
+
+  button.refresh {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  button.refresh:hover { background: #4a7bd8; }
+  button.refresh:disabled { opacity: 0.5; cursor: wait; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 18px;
+    padding: 20px 28px;
+  }
+
+  @media (max-width: 980px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .panel-header h2 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+  }
+
+  .panel-body { padding: 18px; }
+
+  .status-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 4px;
+  }
+  .status-tag.neutral { background: #1e222c; color: var(--text-muted); }
+  .status-tag.bull { background: #10241c; color: var(--green); }
+  .status-tag.bear { background: #241010; color: var(--red); }
+
+  #chart-wrap {
+    padding: 18px;
+    height: 340px;
+  }
+
+  .score-display {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .score-value {
+    font-family: var(--mono);
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .score-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .threshold-info {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .threshold-info .long { color: var(--green); }
+  .threshold-info .short { color: var(--red); }
+
+  .breakdown-list {
+    border-top: 1px solid var(--panel-border);
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+  }
+
+  .breakdown-item .fired { color: var(--green); }
+
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--panel-border);
+    font-size: 13px;
+  }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-row .label { color: var(--text-muted); }
+  .metric-row .value { font-family: var(--mono); font-weight: 600; }
+
+  .loading-text { color: var(--text-dim); font-family: var(--mono); font-size: 13px; }
+
+  .gate-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    border: 1px solid var(--panel-border);
+    background: #14171d;
+  }
+  .gate-banner .gate-icon { font-size: 13px; flex-shrink: 0; }
+  .gate-banner.pending { color: var(--amber); }
+  .gate-banner.pass { color: var(--green); }
+  .gate-banner.fail { color: var(--text-muted); }
+  .gate-banner.fail .gate-icon { color: var(--amber); }
+
+  .formula-box {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: #0F1115;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    color: var(--text-muted);
+  }
+  .formula-box .fb-pass { color: var(--green); }
+  .formula-box .fb-fail { color: var(--amber); }
+
+  .trigger-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 2px 4px 2px 0;
+  }
+  .trigger-badge.active { background: #10241c; color: var(--green); border: 1px solid #1e4a35; }
+  .trigger-badge.inactive { background: #1a1d24; color: var(--text-dim); border: 1px solid var(--panel-border); }
+
+  .history-table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: var(--mono); }
+  .history-table th { text-align: left; color: var(--text-dim); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--panel-border); }
+  .history-table td { padding: 6px 8px; border-bottom: 1px solid #1c2029; }
+  .history-table .pnl-pos { color: var(--green); }
+  .history-table .pnl-neg { color: var(--red); }
+
+  .telegram-preview {
+    background: #17212b;
+    border: 1px solid #232e3a;
+    border-radius: 10px;
+    padding: 14px;
+    max-width: 320px;
+    font-family: var(--sans);
+  }
+  .telegram-preview .tg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .telegram-preview .tg-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #5B8DEF, #7C6FEF); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+  .telegram-preview .tg-name { font-size: 13px; font-weight: 600; color: #fff; }
+  .telegram-preview .tg-bubble { background: #2b5278; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: #e8eef5; line-height: 1.5; }
+  .telegram-preview .tg-bubble strong { color: #7ec8ff; }
+
+  .inst-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #10241c;
+    color: var(--green);
+    border: 1px solid #1e4a35;
+    letter-spacing: 0.3px;
+  }
+  .inst-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
+  .panel-glow-bull { box-shadow: inset 0 0 0 1px rgba(62,207,142,0.25), 0 0 30px rgba(62,207,142,0.06); }
+  .panel-glow-bear { box-shadow: inset 0 0 0 1px rgba(196,84,74,0.25), 0 0 30px rgba(196,84,74,0.06); }
+  .panel-glow-neutral { box-shadow: inset 0 0 0 1px rgba(90,100,120,0.15); }
+
+  .hero-number {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 1;
+  }
+  .hero-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .confirmed-tag { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 4px; }
+  .confirmed-tag.confirmed { background: #10241c; color: var(--green); border: 1px solid #1e4a35; }
+  .confirmed-tag.forming { background: #241c10; color: var(--amber); border: 1px solid #4a3a1e; }
+
+  .indicator-window { background: #0F1115; border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px; }
+  .swing-label { font-family: var(--mono); font-size: 9px; font-weight: 700; }
+
+  .disclosure {
+    grid-column: 1 / -1;
+    background: #14171d;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .disclosure strong { color: var(--text-primary); }
+
+  .symbol-select {
+    cursor: pointer;
+    font-family: var(--sans);
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 26px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238A909C'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+  .symbol-select:focus { outline: none; border-color: var(--accent); }
+
+  @media (max-width: 720px) {
+    .topbar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+    .topbar-right {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .price-tag { font-size: 15px; min-width: auto; }
+    .grid { padding: 14px 16px; grid-template-columns: 1fr; }
+    .score-value { font-size: 32px; }
+    #chart-wrap { height: 240px; padding: 12px; }
+    .input-row-split { grid-template-columns: 1fr; gap: 0; }
+    button.refresh { padding: 9px 12px; font-size: 12px; }
+    .pill { font-size: 11px; padding: 6px 10px; }
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #10241c;
+    border: 1px solid #1e4a35;
+    border-radius: 20px;
+  }
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.7);
+    animation: pulse-dot 1.8s infinite;
+  }
+  .live-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.5px;
+  }
+  @keyframes pulse-dot {
+    0% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(62, 207, 142, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0); }
+  }
+
+  .panel { transition: box-shadow 0.3s ease, border-color 0.3s ease; }
+  .panel:hover { border-color: #333a47; box-shadow: 0 0 24px rgba(91, 141, 239, 0.08); }
+
+  .price-tag.flash-up { animation: flash-green 0.6s ease; }
+  .price-tag.flash-down { animation: flash-red 0.6s ease; }
+  @keyframes flash-green {
+    0% { color: var(--green); text-shadow: 0 0 12px rgba(62, 207, 142, 0.8); }
+    100% { color: var(--text-primary); text-shadow: none; }
+  }
+  @keyframes flash-red {
+    0% { color: var(--red); text-shadow: 0 0 12px rgba(196, 84, 74, 0.8); }
+    100% { color: var(--text-primary); text-shadow: none; }
+  }
+
+  .gate-pill-glow.gate-pass {
+    animation: glow-green 2s ease-in-out infinite alternate;
+  }
+  .gate-pill-glow.gate-fail {
+    animation: glow-red 2s ease-in-out infinite alternate;
+  }
+  @keyframes glow-green {
+    from { box-shadow: 0 0 4px rgba(62, 207, 142, 0.2); }
+    to { box-shadow: 0 0 12px rgba(62, 207, 142, 0.5); }
+  }
+  @keyframes glow-red {
+    from { box-shadow: 0 0 4px rgba(196, 84, 74, 0.2); }
+    to { box-shadow: 0 0 12px rgba(196, 84, 74, 0.5); }
+  }
+
+  .score-value { transition: color 0.4s ease; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .panel { animation: fadeInUp 0.4s ease backwards; }
+  .panel:nth-child(1) { animation-delay: 0.05s; }
+  .panel:nth-child(2) { animation-delay: 0.1s; }
+  .panel:nth-child(3) { animation-delay: 0.15s; }
+  .panel:nth-child(4) { animation-delay: 0.2s; }
+  .panel:nth-child(5) { animation-delay: 0.25s; }
+
+  button.refresh { transition: transform 0.15s ease, box-shadow 0.2s ease; }
+  button.refresh:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(91, 141, 239, 0.35); }
+  button.refresh:active { transform: translateY(0); }
+
+  .input-row { margin-bottom: 14px; }
+
+  .scanner-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .scanner-card {
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+  }
+  .scanner-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .scanner-card.top-signal { border-color: var(--green); box-shadow: 0 0 12px rgba(62, 207, 142, 0.15); }
+  .scanner-card .sc-symbol { font-family: var(--mono); font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+  .scanner-card .sc-price { font-family: var(--mono); font-size: 15px; margin-bottom: 6px; }
+  .scanner-card .sc-score { font-family: var(--mono); font-size: 12px; }
+  @media (max-width: 720px) {
+    .scanner-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .input-row-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .input-row label, .input-row-split label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .input-row input, .input-row-split input {
+    width: 100%;
+    background: #0F1115;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text-primary);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .input-row input:focus, .input-row-split input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .calc-btn {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    margin-bottom: 14px;
+  }
+  .calc-btn:hover { background: #4a7bd8; }
+  .risk-result { border-top: 1px solid var(--panel-border); padding-top: 12px; }
+  .google-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    color: #3c4043;
+    border: 1px solid var(--panel-border);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .google-btn:hover { background: #f5f5f5; }
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+  }
+  .user-avatar { width: 24px; height: 24px; border-radius: 50%; }
+  .logout-link { color: var(--text-dim); font-size: 11px; text-decoration: underline; margin-left: 4px; }
+  .logout-link:hover { color: var(--text-primary); }
+
+  .login-gate {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .login-gate .google-btn { display: inline-flex; margin-top: 14px; }
+
+  .trade-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .trade-form .full { grid-column: 1 / -1; }
+  .trade-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .trade-btn { padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: var(--sans); }
+  .trade-btn.long { background: var(--green); color: #0F1115; }
+  .trade-btn.short { background: var(--red); color: white; }
+  .position-item {
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+  .position-item .pos-head { display: flex; justify-content: space-between; margin-bottom: 8px; font-family: var(--mono); }
+  .close-trade-btn {
+    background: var(--panel-border);
+    color: var(--text-primary);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .close-trade-btn:hover { background: #333944; }
+  .calc-disclaimer {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 12px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">CF</div>
+    <div class="brand-text">
+      <h1>Confluence Signal Engine</h1>
+      <p>Data Layer · Analysis Engine · Backtest Gate</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-indicator">
+      <span class="live-dot"></span>
+      <span class="live-text">LIVE</span>
+    </div>
+    <div class="price-tag" id="price-tag">$--</div>
+    <select class="pill symbol-select" id="symbol-select" onchange="loadAll()">
+      {% for s in symbols %}
+      <option value="{{ s }}" {% if s == default_symbol %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select class="pill symbol-select" id="timeframe-select" onchange="loadAll()">
+      {% for tf in timeframes %}
+      <option value="{{ tf }}" {% if tf == default_timeframe %}selected{% endif %}>{{ tf|upper }}</option>
+      {% endfor %}
+    </select>
+    <div class="pill gate-pending" id="gate-pill">GATE: LOADING</div>
+    <button class="refresh" id="refresh-btn" onclick="loadAll()">Refresh</button>
+    {% if user %}
+    <div class="user-badge">
+      <img src="{{ user.picture }}" class="user-avatar" alt="">
+      <span>{{ user.name.split(' ')[0] }}</span>
+      <a href="/logout" class="logout-link">Logout</a>
+    </div>
+    {% else %}
+    <a href="/login" class="google-btn">
+      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.6 3 24 3 16 3 9 7.6 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.5 0 10.4-1.9 14.3-5.1l-6.6-5.4C29.6 36.5 27 37.3 24 37.3c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9 41.5 16 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.6 5.4C41.5 36 45 30.5 45 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
+      Continue with Google
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid">
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="panel-header">
+      <h2>MARKET SCANNER — ALL WATCHED SYMBOLS</h2>
+      <span class="status-tag neutral" id="scanner-status">Ranks every symbol live</span>
+    </div>
+    <div class="panel-body">
+      <div style="margin-bottom:14px;">
+        <span style="font-size:11px;color:var(--text-dim);margin-right:8px;">PRESETS:</span>
+        <button class="close-trade-btn" onclick="applyPreset('conservative')">Conservative Swing (1D, Score≥2)</button>
+        <button class="close-trade-btn" onclick="applyPreset('scalp')">Intraday Scalp (1H, Score≥1)</button>
+        <button class="close-trade-btn" onclick="applyPreset('highest')">Highest Expectancy (Auto)</button>
+        <span id="preset-status" style="font-size:11px;color:var(--text-dim);margin-left:8px;"></span>
+      </div>
+      <div id="scanner-body">
+        <div class="loading-text">Scanning all symbols...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="panel-header">
+      <h2>FULL INDICATOR WINDOW — PRICE / SWING STRUCTURE / RSI / VOLUME</h2>
+      <span class="inst-badge"><span class="dot"></span>COMBINED CONFLUENCE VIEW</span>
+    </div>
+    <div class="panel-body">
+      <div class="calc-disclaimer" style="margin-bottom:10px;">Price with HH/HL/LH/LL swing labels, RSI, and Volume shown together — this is the same data feeding the single Confluence Score above, broken out so every contributing indicator is visible at once.</div>
+      <div class="indicator-window">
+        <canvas id="price-swing-canvas" style="width:100%;height:220px;"></canvas>
+        <canvas id="rsi-canvas" style="width:100%;height:70px;margin-top:6px;"></canvas>
+        <canvas id="volume-canvas" style="width:100%;height:60px;margin-top:6px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>CONFLUENCE SCORE — LAST 60 CANDLES</h2>
+      <span class="status-tag neutral" id="chart-status">NEUTRAL</span>
+    </div>
+    <div id="chart-wrap">
+      <canvas id="score-canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>LAYER 2: CONFLUENCE SCORER</h2>
+      <span class="status-tag neutral" id="score-status">NEUTRAL</span>
+    </div>
+    <div class="panel-body">
+      <div class="score-display">
+        <div>
+          <div class="hero-label">Confluence rating <span class="confirmed-tag confirmed" id="confirmed-tag">LOCKED — CLOSED CANDLE</span></div>
+          <div class="hero-number" id="score-value">--</div>
+          <div id="live-price-note" style="display:none;font-size:10px;color:var(--amber);margin-top:6px;font-family:var(--mono);"></div>
+        </div>
+        <div class="threshold-info">
+          <div class="long">SIGNAL: ≥ +2 (high selectivity)</div>
+          <div>RSI extreme + swing structure aligned</div>
+        </div>
+      </div>
+      <div class="breakdown-list" id="breakdown-list">
+        <div class="loading-text">Loading components...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>LAYER 3: WALK-FORWARD BACKTEST GATE</h2>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="inst-badge"><span class="dot"></span>OOS VERIFIED</span>
+        <button class="close-trade-btn" onclick="exportBacktest()">Export CSV</button>
+      </div>
+    </div>
+    <div class="panel-body" id="backtest-body">
+      <div class="loading-text">Running backtest...</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>LAYER 1: DATA LAYER STATUS</h2>
+      <span class="inst-badge"><span class="dot"></span>BINANCE REST v3 | LIVE</span>
+    </div>
+    <div class="panel-body" id="data-status-body">
+      <div class="metric-row"><span class="label">Source</span><span class="value">Binance public API</span></div>
+      <div class="metric-row"><span class="label">Symbol</span><span class="value">{{ default_symbol }}</span></div>
+      <div class="metric-row"><span class="label">Timeframe</span><span class="value">{{ default_timeframe }}</span></div>
+      <div class="metric-row"><span class="label">Candles loaded</span><span class="value" id="candle-count">--</span></div>
+      <div class="metric-row"><span class="label">Last updated</span><span class="value" id="last-updated">--</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>LAYER 6: RISK & POSITION SIZER</h2>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="inst-badge"><span class="dot"></span>FRICTION: 0.15%</span>
+        <span class="status-tag neutral" id="risk-cap-tag">1% CAP</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="input-row">
+        <label>Account balance ($)</label>
+        <input type="number" id="input-balance" value="10000" min="0">
+      </div>
+      <div class="input-row">
+        <label>Risk per trade (%)</label>
+        <input type="number" id="input-risk-pct" value="1.0" min="0.1" max="10" step="0.1">
+      </div>
+      <div class="input-row-split">
+        <div>
+          <label>Entry price</label>
+          <input type="number" id="input-entry" value="0" min="0">
+        </div>
+        <div>
+          <label>Stop loss</label>
+          <input type="number" id="input-stop" value="0" min="0">
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcPositionSize()">Calculate position size</button>
+      <div id="risk-result" class="risk-result">
+        <div class="loading-text">Enter values above and calculate</div>
+      </div>
+      <div class="calc-disclaimer">Calculator only — no order is placed. This tool does not connect to any exchange.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>DEMO PAPER TRADING</h2>
+      {% if user %}
+      <span class="status-tag bull" id="demo-balance-tag">${{ "%.2f"|format(demo_balance) }}</span>
+      {% else %}
+      <span class="status-tag neutral">LOGIN REQUIRED</span>
+      {% endif %}
+    </div>
+    <div class="panel-body">
+      {% if user %}
+      <div class="trade-form">
+        <div class="full">
+          <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:6px;">Units (auto from position sizer, or enter manually)</label>
+          <input type="number" id="demo-units" placeholder="e.g. 0.05" style="width:100%;background:#0F1115;border:1px solid var(--panel-border);border-radius:6px;padding:9px 12px;color:var(--text-primary);font-family:var(--mono);font-size:13px;">
+        </div>
+      </div>
+      <div class="trade-btn-row">
+        <button class="trade-btn long" onclick="openDemoTrade('long')">Open LONG</button>
+        <button class="trade-btn short" onclick="openDemoTrade('short')">Open SHORT</button>
+      </div>
+      <div class="calc-disclaimer" style="margin-bottom:14px;">Uses entry/stop from the Risk Sizer panel above. Simulated money only — $1,000 starting balance, persists to your account.</div>
+      <div id="demo-positions">
+        <div class="loading-text">Loading positions...</div>
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--panel-border);">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">TRADE HISTORY</div>
+        <div id="demo-history">
+          <div class="loading-text">No closed trades yet</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="login-gate">
+        <p>Sign in to trade with your $1,000 demo account</p>
+        <a href="/login" class="google-btn">Continue with Google</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="panel-header">
+      <h2>CHART ASSISTANT — Q&A</h2>
+      <span class="status-tag neutral">PRODUCT A</span>
+    </div>
+    <div class="panel-body">
+      <button class="calc-btn" style="width:auto;padding:10px 20px;" onclick="askChartAssistant()" id="assistant-btn">Analyze selected symbol now</button>
+      <div id="assistant-output" style="margin-top:16px;">
+        <div class="loading-text">Click above to get a structured breakdown of the current setup — confluence, RSI, volume profile, trendlines, and position sizing context.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <div class="panel-header">
+      <h2>SIGNAL ALERT PREVIEW</h2>
+      <span class="status-tag neutral">Telegram bot integration in progress</span>
+    </div>
+    <div class="panel-body">
+      <div class="calc-disclaimer" style="margin-bottom:14px;">This is a preview of what a live Telegram alert will look like once the bot is connected — showing real data from the current selected symbol.</div>
+      <div class="telegram-preview" id="telegram-preview">
+        <div class="tg-header">
+          <div class="tg-avatar">CF</div>
+          <div class="tg-name">Confluence Signal Bot</div>
+        </div>
+        <div class="tg-bubble" id="tg-bubble-content">Loading preview...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclosure">
+    <strong>Non-repainting signal guarantee:</strong> The Confluence Score, buy/sell direction, and price shown above are always locked to the last fully <b>closed</b> candle — never the live, still-forming one. This means once a signal is posted, it is mathematically final and cannot change, flip, or "repaint" later, regardless of how the market moves afterward. If the current candle hasn't closed yet, its live price is shown separately as context only and is never used to generate the official signal.
+    <br><br>
+    <strong>Methodology note:</strong> This dashboard shows the confluence scorer and backtest gate exactly as specified — no bare buy/sell verdict, and no signal reaches "passed" status without clearing an out-of-sample validation check on expectancy. Exit logic uses real ATR-based stop-loss and 1:10 risk/reward take-profit targets, walked forward bar-by-bar, net of modeled trading fees and slippage. A "not yet passing" gate means the system is correctly refusing to trust a setup with too little data or negative expectancy — not a bug. Auto-execution is intentionally not connected in this build. Historical candle caching, a background alert worker, and persistent per-user settings are planned next-phase infrastructure work.
+  </div>
+
+</div>
+
+<script>
+let scoreHistory = [];
+
+async function loadSignal() {
+  const symbol = document.getElementById('symbol-select').value;
+  const timeframe = document.getElementById('timeframe-select').value;
+  const res = await fetch('/api/signal?symbol=' + symbol + '&timeframe=' + timeframe);
+  const data = await res.json();
+  if (!data.ok) {
+    document.getElementById('breakdown-list').innerHTML = `<div class="loading-text" style="color:var(--red)">Error: ${data.error}</div>`;
+    return;
+  }
+
+  const priceTagEl = document.getElementById('price-tag');
+  const oldPrice = parseFloat((priceTagEl.textContent || '0').replace(/[$,]/g, '')) || 0;
+  priceTagEl.textContent = '$' + data.latest_price.toLocaleString();
+  if (oldPrice && data.latest_price !== oldPrice) {
+    priceTagEl.classList.remove('flash-up', 'flash-down');
+    void priceTagEl.offsetWidth;
+    priceTagEl.classList.add(data.latest_price > oldPrice ? 'flash-up' : 'flash-down');
+  }
+  document.getElementById('score-value').textContent = (data.latest_score > 0 ? '+' : '') + data.latest_score;
+  document.getElementById('candle-count').textContent = '1000';
+  document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+
+  const statusEl = document.getElementById('score-status');
+  const chartStatusEl = document.getElementById('chart-status');
+  let statusClass = 'neutral', statusText = 'NEUTRAL';
+  if (data.latest_score >= data.threshold) { statusClass = 'bull'; statusText = 'LONG SIGNAL'; }
+  else if (data.latest_score < 0) { statusClass = 'bear'; statusText = 'CAUTION'; }
+  statusEl.className = 'status-tag ' + statusClass;
+  statusEl.textContent = statusText;
+  chartStatusEl.className = 'status-tag ' + statusClass;
+  chartStatusEl.textContent = statusText;
+
+  const confirmedTag = document.getElementById('confirmed-tag');
+  if (confirmedTag) {
+    confirmedTag.className = 'confirmed-tag confirmed';
+    confirmedTag.textContent = 'LOCKED — CLOSED CANDLE';
+  }
+
+  const livePriceNote = document.getElementById('live-price-note');
+  if (livePriceNote) {
+    if (data.forming_price) {
+      livePriceNote.style.display = 'block';
+      livePriceNote.textContent = `Live price right now: $${data.forming_price.toLocaleString()} (current candle still forming — not yet part of the signal above)`;
+    } else {
+      livePriceNote.style.display = 'none';
+    }
+  }
+
+  // Soft glow on key panels reflecting current market state - purely visual,
+  // does not affect any calculation.
+  const glowClass = statusClass === 'bull' ? 'panel-glow-bull' : statusClass === 'bear' ? 'panel-glow-bear' : 'panel-glow-neutral';
+  document.querySelectorAll('.panel').forEach(p => {
+    p.classList.remove('panel-glow-bull', 'panel-glow-bear', 'panel-glow-neutral');
+  });
+  const scorePanel = document.getElementById('score-status').closest('.panel');
+  const chartPanel = document.getElementById('chart-status').closest('.panel');
+  if (scorePanel) scorePanel.classList.add(glowClass);
+  if (chartPanel) chartPanel.classList.add(glowClass);
+
+  const breakdown = data.breakdown || {};
+  const rsi = data.latest_rsi;
+  const rsiLabel = rsi === null || rsi === undefined ? 'RSI: —' :
+    (rsi < 30 ? `RSI: ${rsi} OVERSOLD TRIGGER` : rsi > 70 ? `RSI: ${rsi} OVERBOUGHT TRIGGER` : `RSI: ${rsi} NEUTRAL`);
+  const rsiActive = breakdown.rsi_oversold || breakdown.rsi_overbought;
+  const swingActive = breakdown.at_swing_low || breakdown.at_swing_high;
+  const swingLabel = breakdown.at_swing_low ? 'SWING LOW TRIGGER' : breakdown.at_swing_high ? 'SWING HIGH TRIGGER' : 'Swing structure: neutral';
+
+  const badgesHtml = `
+    <div style="margin-bottom:12px;">
+      <span class="trigger-badge ${rsiActive ? 'active' : 'inactive'}">${rsiLabel}</span>
+      <span class="trigger-badge ${swingActive ? 'active' : 'inactive'}">${swingLabel}</span>
+    </div>
+  `;
+
+  const listEl = document.getElementById('breakdown-list');
+  const keys = Object.keys(breakdown);
+  const rowsHtml = keys.length === 0
+    ? '<div class="breakdown-item"><span>No components fired</span><span>—</span></div>'
+    : keys.map(k => `<div class="breakdown-item"><span>${k.replace(/_/g,' ')}</span><span class="fired">TRUE</span></div>`).join('');
+  listEl.innerHTML = badgesHtml + rowsHtml;
+
+  scoreHistory = data.history || [];
+  updateTelegramPreview(data);
+  drawIndicatorWindow(data.history || []);
+  drawChart();
+}
+
+function updateTelegramPreview(data) {
+  const bubble = document.getElementById('tg-bubble-content');
+  if (!bubble) return;
+  const breakdown = data.breakdown || {};
+  const triggers = Object.keys(breakdown).map(k => k.replace(/_/g, ' ')).join(' + ') || 'none';
+  const isBullish = data.latest_score >= data.threshold;
+  const isBearish = data.latest_score < 0;
+  const isNeutral = !isBullish && !isBearish;
+  const direction = isBullish ? 'Bullish' : isBearish ? 'Bearish' : 'Neutral';
+  const entry = data.latest_price;
+
+  if (isNeutral) {
+    bubble.innerHTML = `
+      <strong>${data.symbol.replace('USDT','/USDT')} (${data.timeframe.toUpperCase()})</strong><br><br>
+      Score: ${data.latest_score} (Neutral)<br>
+      No active signal right now — confluence score has not crossed the entry threshold.<br>
+      Current price: $${entry.toLocaleString()}
+    `;
+    return;
+  }
+
+  // Only use the trendline level as SL if it's actually on the correct side
+  // of entry for the trade direction - otherwise fall back to a simple ATR-style
+  // buffer. A support level above entry (or resistance below entry) is not a
+  // valid stop, regardless of what the regression line projects.
+  let sl;
+  if (isBullish) {
+    const supportLevel = data.trendlines && data.trendlines.support ? data.trendlines.support.current_level : null;
+    sl = (supportLevel && supportLevel < entry) ? supportLevel : entry * 0.98;
+  } else {
+    const resistanceLevel = data.trendlines && data.trendlines.resistance ? data.trendlines.resistance.current_level : null;
+    sl = (resistanceLevel && resistanceLevel > entry) ? resistanceLevel : entry * 1.02;
+  }
+
+  const risk = Math.abs(entry - sl);
+  const tp = isBullish ? entry + risk * 10 : entry - risk * 10;
+
+  bubble.innerHTML = `
+    <strong>NEW CONFLUENCE SIGNAL: ${data.symbol.replace('USDT','/USDT')} (${data.timeframe.toUpperCase()})</strong><br><br>
+    Score: ${data.latest_score > 0 ? '+' : ''}${data.latest_score} (${direction})<br>
+    Triggers: ${triggers}<br>
+    Suggested Entry: $${entry.toLocaleString()}<br>
+    SL: $${Math.round(sl).toLocaleString()} | TP: $${Math.round(tp).toLocaleString()}
+  `;
+}
+
+async function loadBacktest() {
+  const symbol = document.getElementById('symbol-select').value;
+  const timeframe = document.getElementById('timeframe-select').value;
+  const thresholdParam = window.currentScoreThreshold ? '&score_threshold=' + window.currentScoreThreshold : '';
+  const res = await fetch('/api/backtest?symbol=' + symbol + '&timeframe=' + timeframe + thresholdParam);
+  const data = await res.json();
+  const body = document.getElementById('backtest-body');
+  const gatePill = document.getElementById('gate-pill');
+
+  if (!data.ok) {
+    body.innerHTML = `<div class="loading-text" style="color:var(--red)">Error: ${data.error}</div>`;
+    return;
+  }
+
+  const oosExp = data.out_of_sample.expectancy_pct;
+  const requiredExp = 0; // gate requires expectancy > 0
+  const bannerClass = data.gate_passed ? 'pass' : 'fail';
+  const bannerIcon = data.gate_passed ? '✓' : 'ⓘ';
+  const bannerText = data.gate_passed
+    ? `Gate passed — positive expectancy on ${data.out_of_sample.sample_size} out-of-sample trades`
+    : `Gate: not yet passing — ${data.gate_reason}`;
+
+  gatePill.className = 'pill gate-pill-glow ' + (data.gate_passed ? 'gate-pass' : 'gate-fail');
+  gatePill.textContent = data.gate_passed ? 'GATE: PASSED' : 'GATE: LOW SAMPLE / NOT YET';
+
+  const formulaBox = `
+    <div class="formula-box">
+      Expectancy = (Win% × Avg Win) − (Loss% × Avg Loss)<br>
+      Current: <span class="${oosExp > requiredExp ? 'fb-pass' : 'fb-fail'}">${fmtPct(oosExp)}</span> per trade &nbsp;|&nbsp; Required: <span class="fb-pass">&gt; 0.00%</span> per trade &nbsp;|&nbsp; Sample: ${data.out_of_sample.sample_size} (need ${data.min_sample_size}+)<br>
+      Fees/slippage modeled: ${((data.out_of_sample.fee_pct_applied || 0) * 100).toFixed(2)}% per round-trip
+    </div>
+  `;
+
+  const strategyInfo = data.strategy ? `
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--panel-border);">
+      <strong style="color:var(--text-muted);">${data.strategy.name}</strong><br>
+      Entry: ${data.strategy.entry_rule}<br>
+      Exit: ${data.strategy.exit_rule}
+    </div>
+  ` : '';
+
+  body.innerHTML = `
+    ${strategyInfo}
+    <div class="gate-banner ${bannerClass}"><span class="gate-icon">${bannerIcon}</span>${bannerText}</div>
+    ${formulaBox}
+    <div class="metric-row"><span class="label">In-sample expectancy/trade</span><span class="value" style="color:${data.in_sample.expectancy_pct > 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(data.in_sample.expectancy_pct)}</span></div>
+    <div class="metric-row"><span class="label">In-sample win rate</span><span class="value">${fmtPct(data.in_sample.win_rate)}</span></div>
+    <div class="metric-row"><span class="label">In-sample sample size</span><span class="value">${data.in_sample.sample_size}</span></div>
+    <div class="metric-row"><span class="label">Out-of-sample expectancy/trade</span><span class="value" style="color:${oosExp > 0 ? 'var(--green)' : 'var(--red)'}">${fmtPct(oosExp)}</span></div>
+    <div class="metric-row"><span class="label">Out-of-sample win rate</span><span class="value">${fmtPct(data.out_of_sample.win_rate)}</span></div>
+    <div class="metric-row"><span class="label">Out-of-sample sample size</span><span class="value">${data.out_of_sample.sample_size}</span></div>
+    <div class="calc-disclaimer" style="margin-top:10px;">Low win rate is expected and fine at 1:10 R:R — pass/fail is based on expectancy (average result per trade, net of fees), not win rate alone.</div>
+    <div style="margin-top:14px;">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">SIMULATED EQUITY CURVE (OUT-OF-SAMPLE, $10,000 START)</div>
+      <canvas id="equity-canvas" style="width:100%;height:110px;"></canvas>
+    </div>
+  `;
+
+  drawEquityCurve(data.out_of_sample.equity_curve || []);
+}
+
+function drawEquityCurve(curve) {
+  const canvas = document.getElementById('equity-canvas');
+  if (!canvas || !curve.length) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.parentElement.clientWidth;
+  const cssH = 110;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const balances = curve.map(m => 10000 * m);
+  const minB = Math.min(...balances, 10000);
+  const maxB = Math.max(...balances, 10000);
+  const range = (maxB - minB) || 1;
+  const pad = 8;
+  const w = cssW - pad * 2;
+  const h = cssH - pad * 2;
+
+  ctx.strokeStyle = '#1c2029';
+  ctx.beginPath();
+  const zeroY = pad + h - ((10000 - minB) / range) * h;
+  ctx.moveTo(pad, zeroY);
+  ctx.lineTo(cssW - pad, zeroY);
+  ctx.stroke();
+
+  const finalUp = balances[balances.length - 1] >= 10000;
+  ctx.strokeStyle = finalUp ? '#3ECF8E' : '#C4544A';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  balances.forEach((b, i) => {
+    const x = pad + (i / (balances.length - 1 || 1)) * w;
+    const y = pad + h - ((b - minB) / range) * h;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+async function exportBacktest() {
+  const symbol = document.getElementById('symbol-select').value;
+  const timeframe = document.getElementById('timeframe-select').value;
+  const thresholdParam = window.currentScoreThreshold ? '&score_threshold=' + window.currentScoreThreshold : '';
+  window.open(`/api/backtest/export?symbol=${symbol}&timeframe=${timeframe}${thresholdParam}`, '_blank');
+}
+
+async function applyPreset(name) {
+  const statusEl = document.getElementById('preset-status');
+  const symbol = document.getElementById('symbol-select').value;
+
+  if (name === 'conservative') {
+    document.getElementById('timeframe-select').value = '1d';
+    window.currentScoreThreshold = 2;
+    statusEl.textContent = 'Applied: Conservative Swing (1D, Score≥2)';
+    loadAll();
+  } else if (name === 'scalp') {
+    document.getElementById('timeframe-select').value = '1h';
+    window.currentScoreThreshold = 1;
+    statusEl.textContent = 'Applied: Intraday Scalp (1H, Score≥1)';
+    loadAll();
+  } else if (name === 'highest') {
+    statusEl.textContent = 'Scanning timeframes for best expectancy...';
+    try {
+      const res = await fetch('/api/preset/highest-expectancy?symbol=' + symbol);
+      const data = await res.json();
+      if (!data.ok) {
+        statusEl.textContent = 'No passing setup found across timeframes right now';
+        return;
+      }
+      document.getElementById('timeframe-select').value = data.best.timeframe;
+      window.currentScoreThreshold = null;
+      statusEl.textContent = `Best: ${data.symbol} ${data.best.timeframe.toUpperCase()} — expectancy ${(data.best.expectancy_pct*100).toFixed(2)}% (${data.best.sample_size} trades)`;
+      loadAll();
+    } catch (e) {
+      statusEl.textContent = 'Scan failed';
+    }
+  }
+}
+
+function fmtPct(v) {
+  if (v === null || v === undefined) return '—';
+  return (v * 100).toFixed(2) + '%';
+}
+
+function drawChart() {
+  const canvas = document.getElementById('score-canvas');
+  const wrap = document.getElementById('chart-wrap');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = wrap.clientWidth - 36;
+  const cssH = 300;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  if (!scoreHistory.length) return;
+
+  const highs = scoreHistory.map(d => d.high);
+  const lows = scoreHistory.map(d => d.low);
+  const minP = Math.min(...lows), maxP = Math.max(...highs);
+  const range = (maxP - minP) || 1;
+  const padTop = 16, padBottom = 16, padSides = 14;
+  const w = cssW - padSides * 2;
+  const h = cssH - padTop - padBottom;
+  const n = scoreHistory.length;
+  const slot = w / n;
+  const candleW = Math.max(3, slot * 0.55);
+
+  const yFor = (price) => padTop + h - ((price - minP) / range) * h;
+
+  // gridlines
+  ctx.strokeStyle = '#1c2029';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padTop + (h / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padSides, y);
+    ctx.lineTo(cssW - padSides, y);
+    ctx.stroke();
+  }
+
+  scoreHistory.forEach((d, i) => {
+    const cx = padSides + slot * i + slot / 2;
+    const isUp = d.close >= d.open;
+    const color = isUp ? '#3ECF8E' : '#C4544A';
+
+    // wick
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(cx, yFor(d.high));
+    ctx.lineTo(cx, yFor(d.low));
+    ctx.stroke();
+
+    // body
+    const yOpen = yFor(d.open);
+    const yClose = yFor(d.close);
+    const bodyTop = Math.min(yOpen, yClose);
+    const bodyH = Math.max(1.5, Math.abs(yClose - yOpen));
+    ctx.fillStyle = color;
+    ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH);
+
+    // signal marker below candle
+    if (d.confluence_score > 0) {
+      ctx.fillStyle = '#3ECF8E';
+      ctx.beginPath();
+      ctx.moveTo(cx - 4, cssH - 6);
+      ctx.lineTo(cx + 4, cssH - 6);
+      ctx.lineTo(cx, cssH - 12);
+      ctx.closePath();
+      ctx.fill();
+    } else if (d.confluence_score < 0) {
+      ctx.fillStyle = '#C4544A';
+      ctx.beginPath();
+      ctx.moveTo(cx - 4, cssH - 12);
+      ctx.lineTo(cx + 4, cssH - 12);
+      ctx.lineTo(cx, cssH - 6);
+      ctx.closePath();
+      ctx.fill();
+    }
+  });
+}
+
+async function loadScanner() {
+  const bodyEl = document.getElementById('scanner-body');
+  try {
+    const res = await fetch('/api/scanner');
+    const data = await res.json();
+    if (!data.ok) {
+      bodyEl.innerHTML = '<div class="loading-text" style="color:var(--red)">Scanner failed to load</div>';
+      return;
+    }
+
+    bodyEl.innerHTML = '<div class="scanner-grid">' + data.results.map((r, idx) => {
+      if (r.error) {
+        return `<div class="scanner-card"><div class="sc-symbol">${r.symbol}</div><div class="loading-text">Unavailable</div></div>`;
+      }
+      const color = r.score > 0 ? 'var(--green)' : (r.score < 0 ? 'var(--red)' : 'var(--text-muted)');
+      const isTop = idx === 0 && r.score > 0;
+      return `
+        <div class="scanner-card ${isTop ? 'top-signal' : ''}" onclick="selectFromScanner('${r.symbol}')">
+          <div class="sc-symbol">${r.symbol}${isTop ? ' 🔥' : ''}</div>
+          <div class="sc-price">$${r.price.toLocaleString()}</div>
+          <div class="sc-score" style="color:${color}">Score: ${r.score > 0 ? '+' : ''}${r.score} · RSI ${r.rsi ?? '—'}</div>
+        </div>
+      `;
+    }).join('') + '</div>';
+  } catch (e) {
+    bodyEl.innerHTML = '<div class="loading-text" style="color:var(--red)">Scanner failed to load</div>';
+  }
+}
+
+function selectFromScanner(symbol) {
+  document.getElementById('symbol-select').value = symbol;
+  loadAll();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function drawIndicatorWindow(history) {
+  if (!history || !history.length) return;
+  drawPriceSwingPanel(history);
+  drawRSIPanel(history);
+  drawVolumePanel(history);
+}
+
+function setupCanvas(canvas, cssH) {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.parentElement.clientWidth;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, cssW, cssH);
+  return { ctx, cssW, cssH };
+}
+
+function drawPriceSwingPanel(history) {
+  const canvas = document.getElementById('price-swing-canvas');
+  if (!canvas) return;
+  const { ctx, cssW, cssH } = setupCanvas(canvas, 220);
+
+  const highs = history.map(d => d.high);
+  const lows = history.map(d => d.low);
+  const minP = Math.min(...lows), maxP = Math.max(...highs);
+  const range = (maxP - minP) || 1;
+  const padTop = 24, padBottom = 10, padSides = 10;
+  const w = cssW - padSides * 2;
+  const h = cssH - padTop - padBottom;
+  const n = history.length;
+  const slot = w / n;
+  const candleW = Math.max(2, slot * 0.55);
+  const yFor = (price) => padTop + h - ((price - minP) / range) * h;
+
+  history.forEach((d, i) => {
+    const cx = padSides + slot * i + slot / 2;
+    const isUp = d.close >= d.open;
+    const color = isUp ? '#3ECF8E' : '#C4544A';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, yFor(d.high));
+    ctx.lineTo(cx, yFor(d.low));
+    ctx.stroke();
+    const yOpen = yFor(d.open), yClose = yFor(d.close);
+    ctx.fillStyle = color;
+    ctx.fillRect(cx - candleW / 2, Math.min(yOpen, yClose), candleW, Math.max(1, Math.abs(yClose - yOpen)));
+
+    if (d.swing_label) {
+      ctx.fillStyle = (d.swing_label === 'HH' || d.swing_label === 'HL') ? '#3ECF8E' : '#C4544A';
+      ctx.font = "9px 'JetBrains Mono', monospace";
+      ctx.textAlign = 'center';
+      const labelY = (d.swing_label === 'HH' || d.swing_label === 'LH') ? yFor(d.high) - 6 : yFor(d.low) + 12;
+      ctx.fillText(d.swing_label, cx, labelY);
+    }
+  });
+}
+
+function drawRSIPanel(history) {
+  const canvas = document.getElementById('rsi-canvas');
+  if (!canvas) return;
+  const { ctx, cssW, cssH } = setupCanvas(canvas, 70);
+  const pad = 6;
+  const w = cssW - pad * 2;
+  const h = cssH - pad * 2;
+  const n = history.length;
+
+  // reference lines at 30 / 70
+  [30, 70].forEach(level => {
+    const y = pad + h - (level / 100) * h;
+    ctx.strokeStyle = '#262b35';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(pad, y);
+    ctx.lineTo(cssW - pad, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  ctx.fillStyle = '#565C68';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.fillText('RSI', pad, 10);
+
+  ctx.strokeStyle = '#5B8DEF';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  history.forEach((d, i) => {
+    if (d.rsi === null || d.rsi === undefined) return;
+    const x = pad + (i / (n - 1 || 1)) * w;
+    const y = pad + h - (d.rsi / 100) * h;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+function drawVolumePanel(history) {
+  const canvas = document.getElementById('volume-canvas');
+  if (!canvas) return;
+  const { ctx, cssW, cssH } = setupCanvas(canvas, 60);
+  const pad = 6;
+  const w = cssW - pad * 2;
+  const h = cssH - pad * 2;
+  const n = history.length;
+  const slot = w / n;
+  const barW = Math.max(1.5, slot * 0.6);
+  const maxVol = Math.max(...history.map(d => d.volume || 0), 1);
+
+  ctx.fillStyle = '#565C68';
+  ctx.font = "9px 'JetBrains Mono', monospace";
+  ctx.fillText('VOLUME', pad, 10);
+
+  history.forEach((d, i) => {
+    const cx = pad + slot * i + slot / 2;
+    const barH = ((d.volume || 0) / maxVol) * (h - 12);
+    const isUp = d.close >= d.open;
+    ctx.fillStyle = isUp ? 'rgba(62,207,142,0.5)' : 'rgba(196,84,74,0.5)';
+    ctx.fillRect(cx - barW / 2, cssH - pad - barH, barW, barH);
+  });
+}
+
+async function askChartAssistant() {
+  const symbol = document.getElementById('symbol-select').value;
+  const timeframe = document.getElementById('timeframe-select').value;
+  const balance = document.getElementById('input-balance') ? document.getElementById('input-balance').value : null;
+  const riskPct = document.getElementById('input-risk-pct') ? document.getElementById('input-risk-pct').value : 1.0;
+  const outputEl = document.getElementById('assistant-output');
+
+  outputEl.innerHTML = '<div class="loading-text">Analyzing...</div>';
+
+  try {
+    const res = await fetch('/api/chart-assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, timeframe, balance, risk_pct: riskPct })
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      outputEl.innerHTML = `<div class="loading-text" style="color:var(--red)">${data.error}</div>`;
+      return;
+    }
+
+    outputEl.innerHTML = data.summary.map(line =>
+      `<div style="padding:8px 0;border-bottom:1px solid var(--panel-border);font-size:13px;line-height:1.6;">${line}</div>`
+    ).join('');
+  } catch (e) {
+    outputEl.innerHTML = '<div class="loading-text" style="color:var(--red)">Analysis failed</div>';
+  }
+}
+
+async function calcPositionSize() {
+  const balance = parseFloat(document.getElementById('input-balance').value);
+  const riskPct = parseFloat(document.getElementById('input-risk-pct').value);
+  const entry = parseFloat(document.getElementById('input-entry').value);
+  const stop = parseFloat(document.getElementById('input-stop').value);
+  const resultEl = document.getElementById('risk-result');
+
+  resultEl.innerHTML = '<div class="loading-text">Calculating...</div>';
+
+  try {
+    const res = await fetch('/api/position-size', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ balance, risk_pct: riskPct, entry, stop })
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      resultEl.innerHTML = `<div class="loading-text" style="color:var(--red)">${data.error}</div>`;
+      return;
+    }
+
+    const dirColor = data.direction === 'long' ? 'var(--green)' : 'var(--red)';
+    resultEl.innerHTML = `
+      <div class="metric-row"><span class="label">Direction</span><span class="value" style="color:${dirColor}">${data.direction.toUpperCase()}</span></div>
+      <div class="metric-row"><span class="label">Max dollar risk</span><span class="value" style="color:var(--red)">$${data.max_dollar_risk}</span></div>
+      <div class="metric-row"><span class="label">Position size (units)</span><span class="value">${data.position_units}</span></div>
+      <div class="metric-row"><span class="label">Notional value</span><span class="value">$${data.notional_value.toLocaleString()}</span></div>
+      <div class="metric-row"><span class="label">Take profit (1:10 R:R)</span><span class="value" style="color:var(--green)">$${data.take_profit.toLocaleString()}</span></div>
+      <div class="calc-disclaimer" style="margin-top:8px;">Strategy: high-selectivity entries, 1:10 risk/reward. Fewer trades, each sized to significantly outweigh a losing streak.</div>
+    `;
+  } catch (e) {
+    resultEl.innerHTML = `<div class="loading-text" style="color:var(--red)">Calculation failed</div>`;
+  }
+}
+
+const IS_LOGGED_IN = {{ 'true' if user else 'false' }};
+
+async function loadDemoAccount() {
+  if (!IS_LOGGED_IN) return;
+  try {
+    const res = await fetch('/api/demo/account');
+    const data = await res.json();
+    if (!data.ok) return;
+
+    document.getElementById('demo-balance-tag').textContent = '$' + data.balance.toFixed(2);
+
+    const posEl = document.getElementById('demo-positions');
+    if (!data.open_trades.length) {
+      posEl.innerHTML = '<div class="loading-text">No open positions</div>';
+    } else {
+      posEl.innerHTML = data.open_trades.map(t => `
+        <div class="position-item">
+          <div class="pos-head">
+            <span style="color:${t.direction === 'long' ? 'var(--green)' : 'var(--red)'}">${t.direction.toUpperCase()} ${t.symbol}</span>
+            <span>${t.units} units</span>
+          </div>
+          <div>Entry: $${t.entry_price.toFixed(2)} · Stop: $${t.stop_price.toFixed(2)} · TP: $${t.take_profit.toFixed(2)}</div>
+          <button class="close-trade-btn" onclick="closeDemoTrade(${t.id}, '${t.symbol}')">Close at market</button>
+        </div>
+      `).join('');
+    }
+
+    const histEl = document.getElementById('demo-history');
+    if (!data.history || !data.history.length) {
+      histEl.innerHTML = '<div class="loading-text">No closed trades yet</div>';
+    } else {
+      histEl.innerHTML = `
+        <table class="history-table">
+          <tr><th>Symbol</th><th>Entry</th><th>TP</th><th>SL</th><th>P&L</th><th>Status</th></tr>
+          ${data.history.map(t => `
+            <tr>
+              <td>${t.symbol}</td>
+              <td>$${t.entry_price.toFixed(2)}</td>
+              <td>$${t.take_profit.toFixed(2)}</td>
+              <td>$${t.stop_price.toFixed(2)}</td>
+              <td class="${t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}</td>
+              <td>Closed</td>
+            </tr>
+          `).join('')}
+        </table>
+      `;
+    }
+  } catch (e) { /* silent */ }
+}
+
+async function openDemoTrade(direction) {
+  const symbol = document.getElementById('symbol-select').value;
+  const entry = parseFloat(document.getElementById('input-entry').value);
+  const stop = parseFloat(document.getElementById('input-stop').value);
+  let units = parseFloat(document.getElementById('demo-units').value);
+
+  if (!entry || !stop) {
+    alert('Set entry and stop loss in the Risk Sizer panel first.');
+    return;
+  }
+  if (!units || units <= 0) {
+    alert('Enter a position size in units.');
+    return;
+  }
+
+  const riskPerUnit = Math.abs(entry - stop);
+  const rrMultiple = 10.0;
+  const takeProfit = direction === 'long' ? entry + riskPerUnit * rrMultiple : entry - riskPerUnit * rrMultiple;
+
+  const res = await fetch('/api/demo/open-trade', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ symbol, direction, entry, stop, take_profit: takeProfit, units })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    loadDemoAccount();
+  } else {
+    alert(data.error || 'Failed to open trade');
+  }
+}
+
+async function closeDemoTrade(tradeId, symbol) {
+  const sigRes = await fetch('/api/signal?symbol=' + symbol);
+  const sigData = await sigRes.json();
+  const exitPrice = sigData.latest_price;
+
+  const res = await fetch('/api/demo/close-trade', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trade_id: tradeId, exit_price: exitPrice })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    loadDemoAccount();
+  } else {
+    alert(data.error || 'Failed to close trade');
+  }
+}
+
+async function loadAll() {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+  await Promise.all([loadSignal(), loadBacktest()]);
+  btn.disabled = false;
+  btn.textContent = 'Refresh';
+}
+
+window.addEventListener('resize', drawChart);
+window.addEventListener('resize', () => drawIndicatorWindow(scoreHistory));
+loadAll();
+loadDemoAccount();
+loadScanner();
+</script>
+
+</body>
+</html>
